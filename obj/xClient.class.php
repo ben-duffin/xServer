@@ -3,6 +3,7 @@
 
     use xMask;
 
+    private $root = false;
     private $id;
     private $socket;
     private $pid;
@@ -14,6 +15,13 @@
       $this->setId(uniqid());
     }
 
+    public function setRoot($root = true){
+      $this->root = $root;
+    }
+
+    public function getRoot(){
+      return $this->root;
+    }
 
     public function setId($id) {
       $this->id = $id;

@@ -1,11 +1,12 @@
 <?php
+
   class xServer {
 
     use xMask;
-
-    private $root = false; // buggy - reading from terminal would be nice
+    private $root_pw;
     private $run  = true;
     private $pid;
+    private $pids = array();
 
     private $verbose = true; // if false no terminal output
     private $mem;
@@ -18,11 +19,17 @@
     private $master;
 
 
-    function __construct($host, $port) {
+    function __construct($host, $port, $root_pw = false) {
       ob_start();
 
       $this->host = $host;
       $this->port = $port;
+
+      if($root_pw === false){
+        $this->root_pw = uniqid();
+      }else{
+        $this->root_pw = $root_pw;
+      }
 
       $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
       socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -50,6 +57,14 @@
     }
 
 
+    public function __destruct() {
+      //foreach($this->pids as $pid){
+      //  posix_kill($pid, SIGKILL);
+      //}
+      // Seems to kill master process
+    }
+
+
     private function nPush($data) {
       $stack   = $this->mem->get('notification-stack');
       $stack[] = $data;
@@ -61,7 +76,7 @@
       switch($idx){
         case 'all' :
           return $this->mem->get('notification-stack');
-        break;
+          break;
 
         default :
           $stack = $this->mem->get('notification-stack');
@@ -70,7 +85,7 @@
           }
 
           return null;
-        break;
+          break;
       }
     }
 
@@ -94,90 +109,7 @@
       $this->pid = getmypid();
       $this->br();
 
-      if($this->root == true){
-        $this->console('Command List: "stop", "start", "list", "exit", "memo:xxxxx", "push:xxxxx", "pop:xxxxx"');
-        $stdin = trim(fgets(STDIN, 1024));
-        if($stdin != ''){
-
-          if(strstr($stdin, ':')){
-            $parts   = explode(':', $stdin);
-            $action  = $parts[0];
-            $payload = $parts[1];
-            switch($action){
-              case 'memo' :
-                $payload = str_replace('memo:', '', $stdin);
-                foreach($this->clients as $send_client){
-                  $this->emit($send_client, $payload);
-                }
-              break;
-
-              case 'push' :
-                $this->nPush($payload);
-                $this->console('Successfully added (' . $payload . ') to the Stack.');
-              break;
-
-              case 'pop' :
-                $payload = (int)trim($payload);
-                foreach(self::nPop() as $idx => $msg){
-                  if($payload == $idx){
-                    $this->console($msg);
-                  }
-                }
-              break;
-
-              default:
-                $this->console("echo({$stdin})");
-              break;
-            }
-          }else{
-            switch($stdin){
-              case 'start' :
-                $this->console('The Server issued a start command');
-                foreach($this->clients as $send_client){
-                  $this->emit($send_client, 'The Server issued a a start command');
-                }
-                $this->run = true;
-              break;
-
-              case 'stop' :
-                $this->console('The Server issued a stop command');
-                foreach($this->clients as $send_client){
-                  $this->emit($send_client, 'The Server issued a stop command');
-                }
-                $this->run = false;
-              break;
-
-              case 'exit' :
-                $this->console('The Server issued an exit command');
-                foreach($this->clients as $connected_client){
-                  $this->emit($connected_client, 'The Server issued an exit command');
-                  $this->disconnect($connected_client);
-                }
-                $this->console('Closing down xServer . . . ');
-                die();
-              break;
-
-              case 'list' :
-                foreach(self::nPop() as $stack_pop){
-                  $this->console($stack_pop);
-                }
-              break;
-
-              default :
-                $this->console('stdin: ' . $stdin);
-              break;
-            }
-          }
-          self::br();
-        }
-      }
-
       while(true){
-
-        if(!$this->run){
-          continue;
-        }
-
         $changed_sockets = $this->sockets;
         if($changed_sockets){
           $socket_result = @socket_select($changed_sockets, $write = array(), $except = array(), 5);
@@ -204,6 +136,9 @@
                 }
                 socket_getsockname($socket, $client_address, $client_port);
                 if(!$client->getHandshake()){
+                  if(!$this->run){
+                    continue;
+                  }
                   if($this->handshake($client, $data)){
                     $this->start_client_socket($client);
                   }else{
@@ -289,14 +224,49 @@
       }
 
       unset($this->clients[array_search($client, $this->clients)]);
-
       $this->console("Client {$client->getId()} disconnected");
-
-      // Killing the clients process kills the parent?
       $socket_pid = $client->getPid();
       posix_kill($socket_pid, SIGKILL);
       $this->console('Client Process #' . $socket_pid . ' terminated, Total Clients(' . count($this->clients) . '): Socket has shutdown.');
       $this->br();
+    }
+
+
+    function root_functions($client, $data) {
+        switch($data){
+          case '"start"' :
+            $this->console('The Server issued a start command, via client #'.$client->getId());
+            foreach($this->clients as $connected_client){
+              $this->emit($connected_client, 'The Server issued a a start command, via client #'.$client->getId());
+            }
+            $this->run = true;
+
+
+            return true;
+            break;
+
+          case '"stop"' :
+            $this->console('The Server issued a stop command, via client #'.$client->getId());
+            foreach($this->clients as $send_client){
+              $this->emit($send_client, 'The Server issued a stop command, via client #'.$client->getId());
+            }
+            $this->run = false;
+            return true;
+            break;
+
+          case '"shutdown"' :
+            $this->console('The Server issued an exit command, via client #'.$client->getId());
+            foreach($this->clients as $connected_client){
+              $this->emit($connected_client, 'The Server issued an exit command, via client #'.$client->getId());
+              $this->disconnect($connected_client);
+            }
+            $this->console('Closing down xServer . . . ');
+            die();
+
+            break;
+        }
+
+      return false;
     }
 
 
@@ -305,6 +275,12 @@
 
       if($data == ''){
         return true;
+      }
+
+      if($client->getRoot()){
+        if($this->root_functions($client, $data)){
+          return true;
+        }
       }
 
       if($data == '"exit"'){
@@ -335,18 +311,16 @@
         $action  = trim($parts[0]);
         $payload = trim($parts[1]);
         switch($action){
-          // push data into the stack
           case 'push' :
             self::nPush($payload);
             $this->emit($client, 'Successfully added (' . $payload . ') to the Stack.');
-          break;
+            break;
 
-          // tell all other connected clients
           case 'memo' :
             foreach($this->clients as $send_client){
               $this->emit($send_client, $payload);
             }
-          break;
+            break;
 
           case 'pop' :
             $payload = (int)trim($payload);
@@ -355,11 +329,20 @@
                 $this->emit($client, $msg);
               }
             }
-          break;
+            break;
+
+          case 'elevate' :
+            if($payload == $this->root_pw){
+              $client->setRoot();
+              $this->emit($client, 'Elevated to root status - Server Commands: start, stop, shutdown');
+            }else{
+              $this->emit($client, 'Root authentication failed - password incorrect');
+            }
+            break;
 
           default:
             $this->emit($client, "action({$action}) " . $payload);
-          break;
+            break;
 
         }
       }else{
@@ -378,8 +361,8 @@
         die('Could not spawn new Socket.');
       }elseif($pid != 0){
         $client->setPid($pid);
+        $this->pids[] = $pid;
       }else{
-        // dettach from parent signals - allow zombie process to be reaped
         pcntl_signal(SIGCHLD, SIG_IGN);
 
         if(posix_setsid() == -1){
@@ -387,19 +370,9 @@
           exit;
         }
 
-        // Close STDIN
-        if($this->root == true){
-          fclose(STDIN);
-          fclose(STDERR);
-
-          $stdIn  = fopen('/dev/null', 'r'); // set fd/0
-          $stdErr = fopen('php://stdout', 'w'); // a hack to duplicate fd/1 to 2
-        }
-
         $this->console('#' . getmypid() . ' forked from #' . $this->pid . ', Total Clients(' . count($this->clients) . '): Socket Listening . . .');
         $this->br();
 
-        // we are the child
         while(true){
           usleep(1000);
         }
@@ -424,7 +397,6 @@
         $payload = $this->mask($payload);
       }
 
-      // Auto Client drop
       if(@socket_write($client->getSocket(), $payload, strlen($payload)) === false){
         $this->console("Unable to write to client #{$client->getId()}'s socket");
         $this->disconnect($client);
