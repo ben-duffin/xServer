@@ -295,7 +295,7 @@
       // Killing the clients process kills the parent?
       $socket_pid = $client->getPid();
       posix_kill($socket_pid, SIGKILL);
-      $this->console('Client Process #' . $socket_pid . ' terminated, Total Clients(' . count($this->clients . '): Socket has shutdown.');
+      $this->console('Client Process #' . $socket_pid . ' terminated, Total Clients(' . count($this->clients) . '): Socket has shutdown.');
       $this->br();
     }
 
