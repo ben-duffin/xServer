@@ -80,4 +80,12 @@
 
       return $text;
     }
+
+    function generateHandshakeAcceptKey($key){
+      return "HTTP/1.1 101 Switching Protocols\r\n" .
+      "Upgrade: websocket\r\n" .
+      "Connection: Upgrade\r\n" .
+      "Sec-WebSocket-Accept: $key" .
+      "\r\n\r\n";
+    }
   }

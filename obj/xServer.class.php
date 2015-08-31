@@ -29,14 +29,17 @@
 
       if(!is_resource($socket)){
         $this->console("socket_create() failed: " . socket_strerror(socket_last_error()), true);
+        exit;
       }
 
       if(!socket_bind($socket, $this->host, $this->port)){
         $this->console("socket_bind() failed: " . socket_strerror(socket_last_error()), true);
+        exit;
       }
 
       if(!socket_listen($socket, 20)){
         $this->console("socket_listen() failed: " . socket_strerror(socket_last_error()), true);
+        exit;
       }
 
       $this->master  = $socket;
@@ -255,12 +258,7 @@
         $this->console("Generating Sec-WebSocket-Accept key...");
         $acceptKey = $key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
         $acceptKey = base64_encode(sha1($acceptKey, true));
-        $upgrade   = "HTTP/1.1 101 Switching Protocols\r\n" .
-          "Upgrade: websocket\r\n" .
-          "Connection: Upgrade\r\n" .
-          "Sec-WebSocket-Accept: $acceptKey" .
-          "\r\n\r\n";
-
+        $upgrade   = $this->generateHandshakeAcceptKey($acceptKey);
         $this->emit($client, $upgrade);
         $client->setHandshake(true);
 
@@ -398,7 +396,7 @@
           $stdErr = fopen('php://stdout', 'w'); // a hack to duplicate fd/1 to 2
         }
 
-        $this->console('#' . getmypid() . ' forked from #' . $this->pid . ', Total Clients(' . count($this->clients . '): Socket Listening . . .');
+        $this->console('#' . getmypid() . ' forked from #' . $this->pid . ', Total Clients(' . count($this->clients) . '): Socket Listening . . .');
         $this->br();
 
         // we are the child
