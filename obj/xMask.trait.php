@@ -81,7 +81,7 @@
       return $text;
     }
 
-    function generateHandshakeAcceptKey($key){
+    function generate_handshake_acceptKey($key){
       return "HTTP/1.1 101 Switching Protocols\r\n" .
       "Upgrade: websocket\r\n" .
       "Connection: Upgrade\r\n" .

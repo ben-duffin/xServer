@@ -1,5 +1,5 @@
 # xServer
-WebSockets based notifcations handler
+WebSockets based notifications stack - pronounced 'zerver'
 
 From the command line: ```php xserver``` to start the server listening
 From the client: connect over your chosen WebSockets client!
@@ -10,7 +10,7 @@ From the client: connect over your chosen WebSockets client!
 * "pop:xxx" to view message index number xxx
 * "memo:xxxxx" to broadcast message to all clients
 * "exit" to disconnect for the server
-* "elevate:xxxxx" to elevate client to root and allow server commands below
+* "elevate:xxxxx" where xxxxxx is the password to elevate client to root and allow server commands below
 
 # Server Commands
 * "stop" to pause server from accepting new connections

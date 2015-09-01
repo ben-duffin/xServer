@@ -1,5 +1,4 @@
 <?php
-
   class xServer {
 
     use xMask;
@@ -58,9 +57,9 @@
 
 
     public function __destruct() {
-      //foreach($this->pids as $pid){
-      //  posix_kill($pid, SIGKILL);
-      //}
+      foreach($this->pids as $pid){
+        posix_kill($pid, SIGKILL);
+      }
       // Seems to kill master process
     }
 
@@ -137,6 +136,7 @@
                 socket_getsockname($socket, $client_address, $client_port);
                 if(!$client->getHandshake()){
                   if(!$this->run){
+                    usleep(1000);
                     continue;
                   }
                   if($this->handshake($client, $data)){
@@ -153,6 +153,7 @@
             }
           }
         }
+        usleep(1000);
       }
     }
 
@@ -193,7 +194,7 @@
         $this->console("Generating Sec-WebSocket-Accept key...");
         $acceptKey = $key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
         $acceptKey = base64_encode(sha1($acceptKey, true));
-        $upgrade   = $this->generateHandshakeAcceptKey($acceptKey);
+        $upgrade   = $this->generate_handshake_acceptKey($acceptKey);
         $this->emit($client, $upgrade);
         $client->setHandshake(true);
 
@@ -251,6 +252,8 @@
               $this->emit($send_client, 'The Server issued a stop command, via client #'.$client->getId());
             }
             $this->run = false;
+
+
             return true;
             break;
 
@@ -358,7 +361,7 @@
       $pid = pcntl_fork();
 
       if($pid == -1){
-        die('Could not spawn new Socket.');
+        die('Could not spawn new process.');
       }elseif($pid != 0){
         $client->setPid($pid);
         $this->pids[] = $pid;
