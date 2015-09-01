@@ -1,8 +1,8 @@
 # xServer
 WebSockets based notifications stack - pronounced 'zerver'
 
-From the command line: ```php xserver``` to start the server listening
-From the client: connect over your chosen WebSockets client!
+From the command line: ```php xserver.php``` to start the server listening
+From the client: connect over your chosen WebSockets client! There is an example one included
 
 # Remote Commands
 * "list" to view the stack
@@ -16,3 +16,5 @@ From the client: connect over your chosen WebSockets client!
 * "stop" to pause server from accepting new connections
 * "start" to resume server allowing new connections
 * "shutdown" to close down the server
+* "info" to view the currently connected clients information
+* "kill:xxx" to kill a client where "xxx" is the client id
