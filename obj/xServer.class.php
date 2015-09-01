@@ -66,6 +66,11 @@
     }
 
 
+    public function verbose($mode = true) {
+      $this->verbose = $mode;
+    }
+
+
     private function push($data) {
       $stack   = $this->mem->get('notification-stack');
       $stack[] = $data;

@@ -14,4 +14,23 @@
 
   // start the server ...
   $x_server = new xServer($host, $port, $root_pw);
+
+  // Check for verbose config on command line
+  if(isset($argv[1])){
+    if(strstr($argv[1], '=')){
+      $parts = explode('=', $argv[1]);
+      if($parts[0] == 'verbose'){
+        switch($parts[1]){
+          case 'true' :
+            $x_server->verbose();
+          break;
+          case 'false' :
+            $x_server->verbose(false);
+          break;
+        }
+      }
+    }
+  }
+
+  // Run the server
   $x_server->run();
