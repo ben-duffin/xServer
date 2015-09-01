@@ -1,4 +1,5 @@
 <?php
+
   class xServer {
 
     use xMask;
@@ -17,10 +18,12 @@
     private $clients;
     private $master;
 
+    private $admin_id;
+
 
     function __construct($host, $port, $root_pw = false) {
       ob_start();
-
+      $this->admin_id = false;
       $this->host = $host;
       $this->port = $port;
 
@@ -57,25 +60,24 @@
 
 
     public function __destruct() {
-      foreach($this->pids as $pid){
-        posix_kill($pid, SIGKILL);
-      }
-      // Seems to kill master process
+      //foreach($this->pids as $pid){
+      //  posix_kill($pid, SIGKILL);
+      //}
     }
 
 
-    private function nPush($data) {
+    private function push($data) {
       $stack   = $this->mem->get('notification-stack');
       $stack[] = $data;
       $this->mem->set('notification-stack', $stack);
     }
 
 
-    private function nPop($idx = 'all') {
+    private function pop($idx = 'all') {
       switch($idx){
         case 'all' :
           return $this->mem->get('notification-stack');
-          break;
+        break;
 
         default :
           $stack = $this->mem->get('notification-stack');
@@ -84,7 +86,7 @@
           }
 
           return null;
-          break;
+        break;
       }
     }
 
@@ -104,7 +106,7 @@
 
 
     function run() {
-      $this->console('Started server on process #' . getmypid());
+      $this->console('Started server on process #' . getmypid() . ', listening on port ' . $this->port);
       $this->pid = getmypid();
       $this->br();
 
@@ -135,7 +137,7 @@
                 }
                 socket_getsockname($socket, $client_address, $client_port);
                 if(!$client->getHandshake()){
-                  if(!$this->run){
+                  if(!$this->run && ($client->getId() != $this->admin_id)){
                     usleep(1000);
                     continue;
                   }
@@ -147,6 +149,12 @@
                 }elseif($bytes === 0){
                   $this->disconnect($client);
                 }else{
+                  if(!$this->run && ($client->getId() != $this->admin_id)){
+                      if(!$this->run){
+                        usleep(1000);
+                        continue;
+                      }
+                  }
                   $this->incoming_data($client, $data);
                 }
               }
@@ -213,7 +221,7 @@
       $client                    = new xClient($socket);
       $this->clients[$client_id] = $client;
       $this->sockets[]           = $socket;
-      $this->console("Client ID# {$client->getId()} is successfully created!");
+      $this->console("Client ID# {$client->getId()} was successfully created!");
     }
 
 
@@ -234,40 +242,40 @@
 
 
     function root_functions($client, $data) {
-        switch($data){
-          case '"start"' :
-            $this->console('The Server issued a start command, via client #'.$client->getId());
-            foreach($this->clients as $connected_client){
-              $this->emit($connected_client, 'The Server issued a a start command, via client #'.$client->getId());
-            }
-            $this->run = true;
+      switch($data){
+        case '"start"' :
+          $this->console('The Server issued a start command, via client #' . $client->getId());
+          foreach($this->clients as $connected_client){
+            $this->emit($connected_client, 'The Server issued a a start command, via client #' . $client->getId());
+          }
+          $this->run = true;
 
 
-            return true;
-            break;
+          return true;
+        break;
 
-          case '"stop"' :
-            $this->console('The Server issued a stop command, via client #'.$client->getId());
-            foreach($this->clients as $send_client){
-              $this->emit($send_client, 'The Server issued a stop command, via client #'.$client->getId());
-            }
-            $this->run = false;
+        case '"stop"' :
+          $this->console('The Server issued a stop command, via client #' . $client->getId());
+          foreach($this->clients as $send_client){
+            $this->emit($send_client, 'The Server issued a stop command, via client #' . $client->getId());
+          }
+          $this->run = false;
 
 
-            return true;
-            break;
+          return true;
+        break;
 
-          case '"shutdown"' :
-            $this->console('The Server issued an exit command, via client #'.$client->getId());
-            foreach($this->clients as $connected_client){
-              $this->emit($connected_client, 'The Server issued an exit command, via client #'.$client->getId());
-              $this->disconnect($connected_client);
-            }
-            $this->console('Closing down xServer . . . ');
-            die();
+        case '"shutdown"' :
+          $this->console('The Server issued an exit command, via client #' . $client->getId());
+          foreach($this->clients as $connected_client){
+            $this->emit($connected_client, 'The Server issued an exit command, via client #' . $client->getId());
+            $this->disconnect($connected_client);
+          }
+          $this->console('Closing down xServer . . . ');
+          die();
 
-            break;
-        }
+        break;
+      }
 
       return false;
     }
@@ -293,7 +301,7 @@
       }
 
       if($data == '"list"'){
-        foreach(self::nPop() as $idx => $msg){
+        foreach(self::pop() as $idx => $msg){
           $this->emit($client, "[{$idx}] - $msg");
         }
 
@@ -315,37 +323,58 @@
         $payload = trim($parts[1]);
         switch($action){
           case 'push' :
-            self::nPush($payload);
+            self::push($payload);
             $this->emit($client, 'Successfully added (' . $payload . ') to the Stack.');
-            break;
+            $this->console('Client #'.$client->getId().' added "'.$payload.'" the stack');
+          break;
 
           case 'memo' :
             foreach($this->clients as $send_client){
-              $this->emit($send_client, $payload);
+              $this->emit($send_client, $client->getId().' says: '.$payload);
             }
-            break;
+            $this->console('Client #'.$client->getId().' says: '.$payload);
+          break;
 
           case 'pop' :
             $payload = (int)trim($payload);
-            foreach(self::nPop() as $mdx => $msg){
+            foreach(self::pop() as $mdx => $msg){
               if($payload == $mdx){
                 $this->emit($client, $msg);
               }
             }
-            break;
+            $this->console('Client #'.$client->getId().' viewed the stack');
+          break;
 
           case 'elevate' :
             if($payload == $this->root_pw){
               $client->setRoot();
+              $this->admin_id = $client->getId();
               $this->emit($client, 'Elevated to root status - Server Commands: start, stop, shutdown');
+              $this->console('Elevated client #'.$client->getId().' to Administrator - they now control the server');
+              foreach($this->clients as $send_client){
+                if($send_client->getId() != $client->getId()){
+                  $this->emit($send_client, 'Client "'.$client->getId().'" was elevated to Server Administrator"');
+                }
+              }
             }else{
               $this->emit($client, 'Root authentication failed - password incorrect');
             }
-            break;
+          break;
+
+          case 'name' :
+            if($client->getRoot()){
+              $this->admin_id = $payload;
+            }
+            $this->console('Setting Client name (#'.$client->getId().', #'.$payload.')');
+            $client->setId($payload);
+            $this->emit($client, 'Changed your ID to "'.$payload.'"');
+
+          break;
+
 
           default:
             $this->emit($client, "action({$action}) " . $payload);
-            break;
+          break;
 
         }
       }else{
