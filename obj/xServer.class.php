@@ -329,6 +329,8 @@
             $status = ($this->run) ? 'Running' : 'Not Running';
             $info .= 'The server is currently ' . $status . PHP_EOL;
             $this->emit($client, $info);
+
+            return true;
           break;
         }
       }

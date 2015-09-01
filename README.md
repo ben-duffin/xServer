@@ -1,9 +1,9 @@
 # xServer
 WebSockets based notifications stack - pronounced 'zerver'
 
-From the command line: ```php xserver.php``` to start the server listening
-**To Control Verbosity of terminal** - use ```php xserver.php verbose=true``` or ```php xserver.php verbose=false``` (default true) when starting the sever
-From the client: connect over your chosen WebSockets client! There is an example one included
+* From the command line: ```php xserver.php``` to start the server listening
+* **To Control Verbosity of terminal** - use ```php xserver.php verbose=true``` or ```php xserver.php verbose=false``` (default true) when starting the sever
+* From the client: connect over your chosen WebSockets client! There is an example one included
 
 # Remote Commands
 * "list" to view the stack
