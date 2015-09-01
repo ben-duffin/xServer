@@ -215,7 +215,8 @@
         "pop:xxx" to view message index number xxx<br />
         "list" to view the stack<br />
         "memo:xxxxx" to broadcast message to all clients<br />
-        "exit" to disconnect for the server
+        "exit" to disconnect for the server<br/><br/>
+        If elevated to root and you send a "stop" command <b style="color:red;">only you</b> can communicate with the websocket server until it is resumed.
       </p>
       <input id="data" type="text"  placeholder="Enter data to send . . . " />
       <button id="disconnect">Disconnect</button>

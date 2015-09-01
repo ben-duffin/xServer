@@ -56,6 +56,7 @@
         }
       }
 
+
       return chr($b1) . chr($b2) . $lengthField . $data;
     }
 
@@ -77,6 +78,7 @@
       for($i = 0; $i < strlen($data); ++$i){
         $text .= $data[$i] ^ $masks[$i % 4];
       }
+
 
       return $text;
     }
