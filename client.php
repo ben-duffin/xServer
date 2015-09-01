@@ -196,7 +196,7 @@
     <div id="setup_server">
       <fieldset>
         <legend>Enter Server Details</legend>
-        <input type="text" id="host" placeholder="Enter Host" value="sockets.genasystems.co.uk" />:<input type="text" id="port" placeholder="Enter Port" value="4444" /><button id="setup">Connect to Server</button>
+        <input type="text" id="host" placeholder="Enter Host ( IP or Domain name only )" />:<input type="text" id="port" placeholder="Enter Port" /><button id="setup">Connect to Server</button>
       </fieldset>
     </div>
     <div id="websocket">
