@@ -271,7 +271,14 @@
         "pop:xxx" to view message index number xxx<br />
         "list" to view the stack<br />
         "memo:xxxxx" to broadcast message to all clients<br />
-        "exit" to disconnect for the server<br /><br />
+        "exit" to disconnect for the server<br />
+        "elevate:xxxxx" where xxxxxx is the password to elevate client to root and allow server commands below<br /><br />
+        <b>Server Commands</b>:<br />
+        "stop" to pause server from accepting new connections<br />
+        "start" to resume server allowing new connection<br />
+        "shutdown" to close down the server<br />
+        "info" to view the currently connected clients information<br />
+        "kill:xxx" to kill a client where "xxx" is the client id        <br /><br />
         If elevated to root and you send a "stop" command <b style="color:red;" >only you</b > can communicate with the
         websocket server until it is resumed.
       </p >
