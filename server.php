@@ -32,5 +32,22 @@
     }
   }
 
+  // Check for enforce config on command line
+  if(isset($argv[2])){
+    if(strstr($argv[2], '=')){
+      $parts = explode('=', $argv[1]);
+      if($parts[0] == 'enforce'){
+        switch($parts[1]){
+          case 'true' :
+            $x_server->verbose();
+          break;
+          case 'false' :
+            $x_server->verbose(false);
+          break;
+        }
+      }
+    }
+  }
+
   // Run the server
   $x_server->run();

@@ -2,8 +2,10 @@
 WebSockets based notifications stack - pronounced 'zerver'
 
 * From the command line: ```php xserver.php``` to start the server listening
-* **To Control Verbosity of terminal** - use ```php xserver.php verbose=true``` or ```php xserver.php verbose=false``` (default true) when starting the sever
+* **Verbosity and Enforced** - *use ```php xserver.php verbose=true|false enforce=true|false``` (default true, false) when starting the sever
 * From the client: connect over your chosen WebSockets client! There is an example one included
+
+*  must be used together in order to use enforce command.
 
 # Remote Commands
 * "list" to view the stack
