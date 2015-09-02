@@ -6,11 +6,11 @@
     private $root_pw;
     private $run      = true;
     private $pid;
-    private $pid_file = 'pid_lock/socket.pid';
+    private $pid_file = '/var/www/sockets.genasystems.co.uk/pid_lock/socket.pid';
     private $enforce  = false;
     private $pids     = array();
 
-    private $verbose  = true; // if false no terminal output
+    private $verbose = true; // if false no terminal output
     private $mem;
 
     private $host;
@@ -62,12 +62,15 @@
 
 
     public function __destruct() {
+      if(file_exists($this->pid_file)){
+        unlink($this->pid_file);
+      }
+
       if(getmypid() == $this->pid){
-        foreach($this->clients as $client){
-          posix_kill($client->getPid(), SIGKILL);
-        }
-        if(file_exists($this->pid_file)){
-          unlink($this->pid_file);
+        if(!empty($this->clients)){
+          foreach($this->clients as $client){
+            posix_kill($client->getPid(), SIGTERM);
+          }
         }
       }
     }
@@ -77,9 +80,11 @@
       $this->verbose = $mode;
     }
 
-    public function enforce($status = true){
+
+    public function enforce($status = true) {
       $this->enforce = $status;
     }
+
 
     private function push($data) {
       $stack   = $this->mem->get('notification-stack');
@@ -137,12 +142,14 @@
       }
 
       if(!file_exists($this->pid_file)){
+        umask(0);
+        touch($this->pid_file);
         $contents = $this->pid;
         $fp       = fopen($this->pid_file, 'w');
         fwrite($fp, $contents, strlen($contents));
         fclose($fp);
       }else{
-        die('Socket Server instance already running on process #'.trim(file_get_contents($this->pid_file)).'! Please terminate it to try again.');
+        die('Socket Server instance already running on process #' . trim(file_get_contents($this->pid_file)) . '! Please terminate it to try again.');
       }
 
       while(true){
@@ -274,11 +281,11 @@
       }
 
       unset($this->clients[array_search($client, $this->clients)]);
-      $this->console('Client '.$client->getId().'@' . $client->getIP() . ':' . $client->getPort() . ' disconnected');
+      $this->console('Client ' . $client->getId() . '@' . $client->getIP() . ':' . $client->getPort() . ' disconnected');
+      $this->console('Total Clients(' . count($this->clients) . '): Socket has shutdown.');
       if($client->getHandshake()){
         $socket_pid = $client->getPid();
-        posix_kill($socket_pid, SIGKILL);
-        $this->console('Client Process #' . $socket_pid . ' terminated, Total Clients(' . count($this->clients) . '): Socket has shutdown.');
+        posix_kill($socket_pid, SIGTERM);
       }
       $this->br();
     }
@@ -485,8 +492,10 @@
       if($pid == -1){
         die('Could not spawn new process.');
       }elseif($pid != 0){
-        // we are the parent
-        return true;
+        $client->setPid($pid);
+        $this->pids[] = getmypid();
+
+        return;
       }else{
         pcntl_signal(SIGCHLD, SIG_IGN);
 
@@ -494,8 +503,6 @@
           $this->console("Error: Unable to detach from the terminal window.");
           exit;
         }
-        $client->setPid(getmypid());
-        $this->pids[] = getmypid();
 
         $this->console('#' . getmypid() . ' forked from #' . $this->pid . ', Total Clients(' . count($this->clients) . '): Socket Listening . . .');
         $this->br();
