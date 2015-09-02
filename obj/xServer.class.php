@@ -230,11 +230,14 @@
 
 
     function connect($socket) {
-      $client_id                 = uniqid();
-      $client                    = new xClient($socket);
+      socket_getpeername($socket, $address, $port);
+      $client_id = uniqid();
+      $client    = new xClient($socket);
+      $client->setIP($address);
+      $client->setPort($port);
       $this->clients[$client_id] = $client;
       $this->sockets[]           = $socket;
-      $this->console("Client ID# {$client->getId()} was successfully created!");
+      $this->console("Client ID# {$client->getId()} was successfully created on " . $address . ':' . $port);
     }
 
 
@@ -322,7 +325,7 @@
             }
             $info .= 'Client names are: ';
             foreach($this->clients as $c){
-              $info .= $c->getId() . ', ';
+              $info .= $c->getId() . '@' . $ck->getIP() . ':' . $ck->getPort() . ', ';
             }
             $info = rtrim($info, ', ');
             $info .= PHP_EOL;

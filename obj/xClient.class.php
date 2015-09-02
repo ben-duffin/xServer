@@ -7,6 +7,8 @@
     private $id;
     private $socket;
     private $pid;
+    private $ip;
+    private $port;
     private $handshake = false;
 
 
@@ -45,6 +47,22 @@
 
     public function getPid() {
       return $this->pid;
+    }
+
+    public function getIP() {
+      return $this->ip;
+    }
+
+    public function setIP($ip) {
+      $this->ip = $ip;
+    }
+
+    public function getPort() {
+      return $this->port;
+    }
+
+    public function setPort($port) {
+      $this->port = $port;
     }
 
     public function setHandshake($handshake) {
