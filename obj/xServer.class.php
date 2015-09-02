@@ -281,8 +281,8 @@
       }
 
       unset($this->clients[array_search($client, $this->clients)]);
-      $this->console('Client ' . $client->getId() . '@' . $client->getIP() . ':' . $client->getPort() . ' disconnected');
-      $this->console('Total Clients(' . count($this->clients) . '): Socket has shutdown.');
+      $this->console('Client ' . $client->getId() . '@' . $client->getIP() . ':' . $client->getPort() . ' on process #'.$client->getPid().' disconnected');
+      $this->console('Total Clients(' . count($this->clients) . '): Process and Socket has shutdown.');
       if($client->getHandshake()){
         $socket_pid = $client->getPid();
         posix_kill($socket_pid, SIGTERM);
@@ -494,11 +494,10 @@
       }elseif($pid != 0){
         $client->setPid($pid);
         $this->pids[] = getmypid();
+        pcntl_signal(SIGCHLD, SIG_IGN);
 
         return;
       }else{
-        pcntl_signal(SIGCHLD, SIG_IGN);
-
         if(posix_setsid() == -1){
           $this->console("Error: Unable to detach from the terminal window.");
           exit;
