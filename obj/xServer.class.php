@@ -274,19 +274,18 @@
 
 
     function disconnect($client) {
-      if($client->getSocket()){
-        @socket_shutdown($client->getSocket(), 2);
-        @socket_close($client->getSocket());
-        unset($this->sockets[array_search($client->getSocket(), $this->sockets)]);
-      }
-
+      @socket_shutdown($client->getSocket(), 2);
+      @socket_close($client->getSocket());
+      unset($this->sockets[array_search($client->getSocket(), $this->sockets)]);
       unset($this->clients[array_search($client, $this->clients)]);
-      $this->console('Client ' . $client->getId() . '@' . $client->getIP() . ':' . $client->getPort() . ' on process #'.$client->getPid().' disconnected');
-      $this->console('Total Clients(' . count($this->clients) . '): Process and Socket has shutdown.');
+      $console = 'Client ' . $client->getId() . '@' . $client->getIP() . ':' . $client->getPort() . ' on process #'.$client->getPid().' disconnected';
       if($client->getHandshake()){
+        $console .= ' and process #'.$client->getPid().' was reaped ... ';
         $socket_pid = $client->getPid();
         posix_kill($socket_pid, SIGTERM);
       }
+      $this->console($console);
+      $this->console('Total Clients(' . count($this->clients) . ')');
       $this->br();
     }
 

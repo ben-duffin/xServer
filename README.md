@@ -1,8 +1,8 @@
 # xServer
 WebSockets based notifications stack - pronounced 'zerver'
 
-* From the command line: ```php xserver.php``` to start the server listening
-* **Verbosity and Enforced** - *use ```php xserver.php verbose=true|false enforce=true|false``` (default true, false) when starting the sever
+* From the command line: ```php server.php``` to start the server listening
+* **Verbosity and Enforced** - *use ```php server.php verbose=true|false enforce=true|false``` (default true, false) when starting the sever
 * From the client: connect over your chosen WebSockets client! There is an example one included
 
 The command line arguments must be used together in order to use enforce command. The enforce command ( if true ) will force the server to delete any existing PID lock files and to kill the corresponding process beofre loading itself up.
